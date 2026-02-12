@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ARCoatingDesigner.App.Views.SaveToCatalogDialog"
+        Title="Save to Catalog"
+        Width="350" Height="160"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <StackPanel Margin="16" Spacing="8">
+        <TextBlock Text="Enter coating name:" FontWeight="Bold"/>
+        <TextBox Name="NameBox" Watermark="Coating name..."/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button Content="Save" Click="OnSaveClick" IsDefault="True" Width="80"/>
+            <Button Content="Cancel" Click="OnCancelClick" Width="80"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

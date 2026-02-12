@@ -1,0 +1,263 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ARCoatingDesigner.App.ViewModels"
+        xmlns:sp="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+        x:Class="ARCoatingDesigner.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="AR Coating Designer"
+        Width="1100" Height="820"
+        WindowStartupLocation="CenterScreen">
+
+    <Design.DataContext>
+        <vm:MainViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Single Layer AR" Command="{Binding NewSingleLayerCommand}"/>
+                <MenuItem Header="New _V-Coat" Command="{Binding NewVCoatCommand}"/>
+                <MenuItem Header="New _Empty Design" Command="{Binding NewDesignCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Export ZEMAX .dat..." Click="ExportZemaxClick"/>
+                <MenuItem Header="Export _Text..." Click="ExportTextClick"/>
+            </MenuItem>
+            <MenuItem Header="_Catalog">
+                <MenuItem Header="_Open Catalog..." Click="OpenCatalogClick"/>
+                <MenuItem Header="_Save Catalog" Click="SaveCatalogClick"/>
+                <MenuItem Header="Save Catalog _As..." Click="SaveCatalogAsClick"/>
+                <MenuItem Header="Add Coating _Material..." Click="AddMaterialClick"/>
+                <Separator/>
+                <MenuItem Header="_Load Design from Catalog..." Click="LoadDesignFromCatalogClick"/>
+                <MenuItem Header="Save _Design to Catalog..." Click="SaveDesignToCatalogClick"/>
+            </MenuItem>
+            <MenuItem Header="_Optimize">
+                <MenuItem Header="_Local Optimize" Command="{Binding OptimizeLocalCommand}"/>
+                <MenuItem Header="_Global Optimize" Command="{Binding OptimizeGlobalCommand}"/>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="R vs _Wavelength" Click="PlotVsWavelengthClick"/>
+                <MenuItem Header="R vs _Angle" Click="PlotVsAngleClick"/>
+                <Separator/>
+                <MenuItem Header="_Index Plot..." Click="IndexPlotClick"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="8,4">
+            <TextBlock Text="{Binding StatusText}" FontSize="12"/>
+        </Border>
+
+        <!-- Main Content: top = inputs, bottom = chart -->
+        <Grid RowDefinitions="Auto,*">
+
+            <!-- Top: Three-column input panels -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,*,Auto" Margin="6,4,6,2">
+
+                <!-- Column 0: Design + Layers -->
+                <StackPanel Grid.Column="0" Spacing="4" Margin="0,0,4,0">
+                    <!-- Design Header -->
+                    <Border Background="#E8EEF4" CornerRadius="4" Padding="6">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Coating Design" FontWeight="Bold" FontSize="13"/>
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,2,0,0">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding CoatingName}" Margin="0,0,0,2" Padding="4,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Catalog:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AvailableCatalogs}"
+                                          SelectedItem="{Binding SelectedCatalog}" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Substrate:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding AvailableGlasses}"
+                                          SelectedItem="{Binding SubstrateMaterial}" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Ref λ (μm):" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding ReferenceWavelength}"
+                                               Minimum="0.1" Maximum="20" Increment="0.01" FormatString="F3" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Optical thick.:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding UseOpticalThickness}"
+                                         Name="OpticalThicknessCheckBox" Click="OnOpticalThicknessClick"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Layer Grid -->
+                    <Border Background="#E8F4E8" CornerRadius="4" Padding="6">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Layers (air → substrate)" FontWeight="Bold" FontSize="13"/>
+                            <DataGrid ItemsSource="{Binding Layers}"
+                                      SelectedItem="{Binding SelectedLayer}"
+                                      AutoGenerateColumns="False"
+                                      CanUserReorderColumns="False"
+                                      CanUserResizeColumns="True"
+                                      CanUserSortColumns="False"
+                                      Height="120"
+                                      GridLinesVisibility="Horizontal"
+                                      IsReadOnly="False"
+                                      Name="LayerGrid">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Material" Width="80">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding MaterialName}" VerticalAlignment="Center" Margin="4,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding $parent[Window].DataContext.AvailableMaterials}"
+                                                          SelectedItem="{Binding MaterialName}" HorizontalAlignment="Stretch"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Thick" Binding="{Binding Thickness, StringFormat=\{0:F4\}}" Width="90"/>
+                                    <DataGridCheckBoxColumn Header="Var" Binding="{Binding IsVariable}" Width="45"/>
+                                    <DataGridTextColumn Header="Min" Binding="{Binding MinThickness, StringFormat=\{0:F3\}}" Width="80"/>
+                                    <DataGridTextColumn Header="Max" Binding="{Binding MaxThickness, StringFormat=\{0:F3\}}" Width="80"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                <Button Content="+" Command="{Binding AddLayerCommand}" Width="28" ToolTip.Tip="Add layer"/>
+                                <Button Content="−" Command="{Binding RemoveLayerCommand}" Width="28" ToolTip.Tip="Remove layer"/>
+                                <Button Content="↑" Command="{Binding MoveLayerUpCommand}" Width="28" ToolTip.Tip="Move up"/>
+                                <Button Content="↓" Command="{Binding MoveLayerDownCommand}" Width="28" ToolTip.Tip="Move down"/>
+                                <Button Content="Refresh" Click="RefreshClick" Margin="6,0,0,0" Padding="6,2"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Column 1: Merit Targets -->
+                <StackPanel Grid.Column="1" Spacing="4" Margin="4,0,4,0">
+                    <Border Background="#F4E8E8" CornerRadius="4" Padding="6">
+                        <StackPanel Spacing="2">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="Merit Targets" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Text="{Binding MeritValue, StringFormat='Merit: {0:F4}'}"
+                                           VerticalAlignment="Center" Foreground="DarkRed" FontWeight="Bold"/>
+                            </StackPanel>
+                            <DataGrid ItemsSource="{Binding Targets}"
+                                      SelectedItem="{Binding SelectedTarget}"
+                                      AutoGenerateColumns="False"
+                                      CanUserReorderColumns="False"
+                                      CanUserSortColumns="False"
+                                      Height="200"
+                                      GridLinesVisibility="Horizontal"
+                                      IsReadOnly="False"
+                                      Name="TargetGrid">
+                                <DataGrid.Columns>
+                                    <DataGridCheckBoxColumn Header="Use" Binding="{Binding UseTarget}" Width="50"/>
+                                    <DataGridTextColumn Header="Type" Binding="{Binding TargetType}" Width="70"/>
+                                    <DataGridTextColumn Header="Target" Binding="{Binding TargetValue, StringFormat=\{0:F2\}}" Width="75"/>
+                                    <DataGridTextColumn Header="λ(μm)" Binding="{Binding Wavelength_um, StringFormat=\{0:F3\}}" Width="80"/>
+                                    <DataGridTextColumn Header="AOI" Binding="{Binding AOI_deg, StringFormat=\{0:F1\}}" Width="65"/>
+                                    <DataGridTextColumn Header="Weight" Binding="{Binding Weight, StringFormat=\{0:F2\}}" Width="65"/>
+                                    <DataGridTextColumn Header="Calc" Binding="{Binding CalculatedValue, StringFormat=\{0:F2\}}" Width="75" IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                <Button Content="+" Command="{Binding AddTargetCommand}" Width="28" ToolTip.Tip="Add target"/>
+                                <Button Content="−" Command="{Binding RemoveTargetCommand}" Width="28" ToolTip.Tip="Remove target"/>
+                                <Button Content="Generate" Click="GenerateTargetsClick" Padding="6,2"
+                                        ToolTip.Tip="Generate targets over spectrum"/>
+                                <Button Content="Clear" Command="{Binding ClearTargetsCommand}" Padding="6,2"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Column 2: Optimization + Plot Controls -->
+                <StackPanel Grid.Column="2" Spacing="4" Margin="0,0,0,0" Width="200">
+                    <!-- Optimization -->
+                    <Border Background="#F4F0E0" CornerRadius="4" Padding="6">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Optimization" FontWeight="Bold" FontSize="13"/>
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0,2,0,0">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Max iter:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding OptMaxIterations}"
+                                               Minimum="10" Maximum="10000" Increment="50" FormatString="F0" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Trials:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding OptNumTrials}"
+                                               Minimum="1" Maximum="10000" Increment="10" FormatString="F0" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Best merit:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding OptBestMerit, StringFormat='{}{0:F6}'}"
+                                           VerticalAlignment="Center" FontWeight="Bold" Foreground="DarkGreen" Margin="0,0,0,2"/>
+                            </Grid>
+                            <Button Content="Local Optimize" Command="{Binding OptimizeLocalCommand}"
+                                    IsEnabled="{Binding !IsOptimizing}" HorizontalAlignment="Stretch" Margin="0,2,0,0"/>
+                            <Button Content="Global Optimize" Command="{Binding OptimizeGlobalCommand}"
+                                    IsEnabled="{Binding !IsOptimizing}" HorizontalAlignment="Stretch"/>
+                            <Button Content="Stop" Click="StopOptimizationClick"
+                                    IsEnabled="{Binding IsOptimizing}" HorizontalAlignment="Stretch"
+                                    Foreground="DarkRed" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Plot Controls -->
+                    <Border Background="#E8E8F4" CornerRadius="4" Padding="6">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Plot Controls" FontWeight="Bold" FontSize="13"/>
+
+                            <!-- R vs Wavelength controls -->
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0,2,0,0"
+                                  IsVisible="{Binding PlotVsWavelength}">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="λ min:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding PlotWavelengthMin}"
+                                               Minimum="0.1" Maximum="20" Increment="0.01" FormatString="F3" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="λ max:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding PlotWavelengthMax}"
+                                               Minimum="0.1" Maximum="20" Increment="0.01" FormatString="F3" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="AOI (°):" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding PlotAOI}"
+                                               Minimum="0" Maximum="89" Increment="1" FormatString="F1" Margin="0,0,0,2"/>
+                            </Grid>
+
+                            <!-- R vs Angle controls -->
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" Margin="0,2,0,0"
+                                  IsVisible="{Binding !PlotVsWavelength}">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="λ (μm):" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding PlotWavelengthForAngle}"
+                                               Minimum="0.1" Maximum="20" Increment="0.01" FormatString="F3" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="AOI min:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding PlotAngleMin}"
+                                               Minimum="0" Maximum="89" Increment="1" FormatString="F1" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="AOI max:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding PlotAngleMax}"
+                                               Minimum="0" Maximum="89" Increment="5" FormatString="F1" Margin="0,0,0,2"/>
+                            </Grid>
+
+                            <!-- Shared Y-axis controls -->
+                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" Margin="0,2,0,0">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Y min:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding PlotYMin}"
+                                               Minimum="0" Maximum="100" Increment="1" FormatString="F0" Margin="0,0,0,2"/>
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Y max:" VerticalAlignment="Center" Margin="0,0,6,2"/>
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding PlotYMax}"
+                                               Minimum="0" Maximum="100" Increment="1" FormatString="F0" Margin="0,0,0,2"/>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,4,0,0">
+                                <Button Content="Wavelength" Click="PlotVsWavelengthClick" Padding="6,2"/>
+                                <Button Content="Angle" Click="PlotVsAngleClick" Padding="6,2"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- Bottom: Chart (takes remaining vertical space) -->
+            <Border Grid.Row="1" Margin="6,2,6,4" BorderBrush="#CCCCCC" BorderThickness="1" CornerRadius="4">
+                <sp:AvaPlot Name="AvaPlot1"/>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

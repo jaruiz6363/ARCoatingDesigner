@@ -1,0 +1,84 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ARCoatingDesigner.App.ViewModels"
+        x:Class="ARCoatingDesigner.App.Views.AddMaterialDialog"
+        x:DataType="vm:AddMaterialViewModel"
+        Title="Add Coating Material"
+        Width="380" Height="480"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+
+    <StackPanel Margin="16" Spacing="8">
+        <TextBlock Text="Add Coating Material" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
+
+        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" Margin="0,0,0,8">
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Name}" Margin="0,0,0,4"/>
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Model:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+            <ComboBox Grid.Row="1" Grid.Column="1" SelectedIndex="{Binding DispersionModelIndex}" Margin="0,0,0,4">
+                <ComboBoxItem>Constant</ComboBoxItem>
+                <ComboBoxItem>Cauchy</ComboBoxItem>
+                <ComboBoxItem>Sellmeier</ComboBoxItem>
+            </ComboBox>
+        </Grid>
+
+        <!-- Constant panel -->
+        <Border Background="#F0F0F0" CornerRadius="4" Padding="8" IsVisible="{Binding IsConstant}">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="n:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding ConstantN}" Minimum="1" Maximum="5" Increment="0.01" FormatString="F4" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="k:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding ConstantK}" Minimum="-10" Maximum="10" Increment="0.01" FormatString="F4" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+            </Grid>
+        </Border>
+
+        <!-- Cauchy panel -->
+        <Border Background="#F0F0F0" CornerRadius="4" Padding="8" IsVisible="{Binding IsCauchy}">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="A:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding CauchyA}" Minimum="0" Maximum="10" Increment="0.01" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="B:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding CauchyB}" Minimum="-10" Maximum="10" Increment="0.001" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="C:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding CauchyC}" Minimum="-10" Maximum="10" Increment="0.001" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+            </Grid>
+        </Border>
+
+        <!-- Sellmeier panel -->
+        <Border Background="#F0F0F0" CornerRadius="4" Padding="8" IsVisible="{Binding IsSellmeier}">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="B1:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding SellmeierB1}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="C1:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding SellmeierC1}" Minimum="-1000" Maximum="1000" Increment="0.001" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="B2:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding SellmeierB2}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="C2:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="3" Grid.Column="1" Value="{Binding SellmeierC2}" Minimum="-1000" Maximum="1000" Increment="0.001" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="B3:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="4" Grid.Column="1" Value="{Binding SellmeierB3}" Minimum="-100" Maximum="100" Increment="0.01" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="C3:" VerticalAlignment="Center" Margin="0,0,8,4"/>
+                <NumericUpDown Grid.Row="5" Grid.Column="1" Value="{Binding SellmeierC3}" Minimum="-1000" Maximum="1000" Increment="0.001" FormatString="F6" ShowButtonSpinner="False" Margin="0,0,0,4"/>
+            </Grid>
+        </Border>
+
+        <!-- Error message -->
+        <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" TextWrapping="Wrap"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+        <!-- Buttons -->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+            <Button Content="Add" Click="OnAddClick" IsDefault="True" Width="80"/>
+            <Button Content="Cancel" Click="OnCancelClick" Width="80"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
